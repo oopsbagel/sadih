@@ -4,75 +4,106 @@ import requests
 from functools import partial
 from itertools import chain
 
-START = '2023-04-14'
-END = '2023-04-15'
-
 class Facility:
-    pass
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
 
 class SnoKing(Facility):
-    RENTON = 255
-    KIRKLAND = 225
-    SNOQUALMIE = 256
+    location = "SnoKing"
 
-    stick_n_puck_filter = lambda e: "Stick" in e['eventName']
+    filters = {
+        'stick_n_puck': lambda e: "Stick" in e['eventName'],
+        'public': lambda e: "Public" in e['eventName']
+    }
 
-    @staticmethod
-    def events(rink):
-        return requests.get(f'https://api.bondsports.co/v3/facilities/{rink}/programs-schedule?startDate={START}&endDate={END}').json()['data']
+    def events(self):
+        return requests.get(f'https://api.bondsports.co/v3/facilities/{self.api_id}/programs-schedule?startDate={self.start}&endDate={self.end}').json()['data']
     
-    @staticmethod
-    def format_event(e):
-        # https://support.google.com/calendar/answer/37118?hl=en&co=GENIE.Platform%3DDesktop#zippy=%2Ccreate-or-edit-a-csv-file
-        name = e['eventName']
+    def to_csv(self, e):
+        name = self.rink + ' ' + e['eventName']
+        location = self.location
         if len(e['spaces']) > 0:
             sheet = e['spaces'][0]['spaceName']
-            name = sheet + ' ' + name
-        print(", ".join([name, e['eventStartDate'], e['eventStartTime'], e['eventEndTime']]))
+            location = self.location + ' '  + sheet
+        return ", ".join([name, e['eventStartDate'], e['eventStartTime'], e['eventEndTime'], location])
 
-class OvaLynn(Facility):
-    OlympicView = 1145
-    Lynnwood = 1146
+class Kirkland(SnoKing):
+    api_id = 225
+    rink = "KIRK"
 
-    START = '2023-04-12T00:00:00-07:00'
-    END = '2023-04-13T00:00:00-07:00'
+class Renton(SnoKing):
+    api_id = 255
+    rink = "RENT"
 
-    stick_n_puck_filter = lambda e: "Stick" in e['eventType']
+class Snoqualmie(SnoKing):
+    api_id = 256
+    rink = "SNOQ"
 
-    @staticmethod
-    def events(rink, start, end):
+class WISA(Facility):
+    filters = {
+        'stick_n_puck': lambda e: "Stick" in e['title']
+    }
+
+    def events(self):
         # multiview=1 returns events for both rinks, but Lynnwood event
         # objects don't indicate their location.
-        return requests.get(f'https://www.rectimes.app/ova/booking/getbooking?rink={rink}&multiview=0&minstart=06:00:00&maxend=26:00:00&start={start}&end={end}&_=1680859722270').json()
+        return requests.get(f'https://www.rectimes.app/ova/booking/getbooking?rink={self.api_id}&multiview=0&minstart=06:00:00&maxend=26:00:00&start={self.start}&end={self.end}&_=1680859722270').json()
 
-    @staticmethod
-    def format_event(e):
+    def to_csv(self, e):
         name = e['title']
+        if not e['title'].startswith(self.rink):
+            name = self.rink + ' ' + name
         date, start = e['start'].split(' ')
         _, end = e['end'].split(' ')
-        return ", ".join([name, date, start, end])
+        return ", ".join([name, date, start, end, self.location])
 
-class Lynnwood(OvaLynn):
-    address = "123 Main St"
+class OVA(WISA):
+    api_id = 1145
+    rink = "OVA"
+    location = "Olympic View Arena"
+
+class Lynnwood(WISA):
     api_id = 1146
+    rink = "LYNN"
+    location = "Lynnwood Ice Center"
 
-    @staticmethod
-    def format_event(e):
-        return "Lynnwood " + super().format_event(e)
+class KCI(Facility):
+    rink = "KCI"
+    location = "Kraken Community Iceplex"
 
-def calendar(events, _filter, formatter):
-    return map(formatter, filter(_filter, events()))
+    filters = {
+        'hockey': lambda e: e['sportId'] == 20,
+        'stick_n_puck': lambda e: "Stick" in e['title']
+    }
 
-snoking = calendar(lambda: chain(*map(SnoKing.events, [SnoKing.KIRKLAND, SnoKing.RENTON, SnoKing.SNOQUALMIE])), SnoKing.stick_n_puck_filter, SnoKing.format_event)
+    def events(self):
+        return requests.get(f'https://www.krakencommunityiceplex.com/Umbraco/api/DaySmartCalendarApi/GetEventsAsync?start={self.start}&end={self.end}&variant=2').json()
 
+    def to_csv(self, e):
+        name = self.rink + ' ' + e['title']
+        date, start = e['start'].split('T')
+        _, end = e['end'].split('T')
+        return ", ".join([name, date, start[:-1], end[:-1], self.location])
+
+def calendar(facility, event_filter, start, end):
+    f = facility(start, end)
+    return "\n".join(map(f.to_csv, filter(f.filters[event_filter], f.events())))
+
+# https://support.google.com/calendar/answer/37118?hl=en&co=GENIE.Platform%3DDesktop#zippy=%2Ccreate-or-edit-a-csv-file
 CSV_HEADER = "Subject, Start date, Start time, End time, Location"
 print(CSV_HEADER)
-list(snoking)
 
-o = OvaLynn.events(OvaLynn.OlympicView, OvaLynn.START, OvaLynn.END)
-l = OvaLynn.events(OvaLynn.Lynnwood, OvaLynn.START, OvaLynn.END)
-#list(map(OvaLynn.format_event, filter(OvaLynn.stick_n_puck_filter, o)))
-#print("\n".join(map(partial(OvaLynn.format_event, "Olympic View Arena"), o)))
-print("\n".join(map(OvaLynn.format_event, o)))
-#print("\n".join(map(OvaLynn.format_event, o)))
-#print("\n".join(map(lambda e: "Lynnwood " + e, map(partial(OvaLynn.format_event, "Lynnwood Ice Center"), l))))
+START = '2023-04-17'
+END = '2023-04-24'
+
+start = "2023-04-01T00:00:00-07:00"
+end = "2023-04-08T00:00:00-07:00"
+
+print(calendar(Kirkland, 'public', START, END))
+#print(calendar(Kirkland, 'stick_n_puck', START, END))
+#print(calendar(Renton, 'stick_n_puck', START, END))
+#print(calendar(Snoqualmie, 'stick_n_puck', START, END))
+#print(calendar(OVA, 'stick_n_puck', start, end))
+#print(calendar(Lynnwood, 'stick_n_puck', start, end))
+#print(calendar(KCI, 'stick_n_puck', start, end))
