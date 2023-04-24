@@ -14,6 +14,10 @@ TIMEZONE = ZoneInfo("America/Los_Angeles")
 def parse_date(date):
     return dateutil_parse(date).replace(tzinfo=TIMEZONE)
 
+def date_filter(start, end, event):
+    # Some rink APIs do not strictly respect request start/end dates.
+    return event.start >= start and event.end <= end
+
 def merge_events(a, b):
     return Event(a.summary, start=a.start, end=b.end, location=a.location)
 
@@ -24,9 +28,10 @@ def events_are_abutting(a, b):
 def events_are_same(a, b):
     return a.summary == b.summary and a.location == b.location and a.start == b.start and a.end == b.end
 
-def date_filter(start, end, event):
-    # Some rink APIs do not strictly respect request start/end dates.
-    return event.start >= start and event.end <= end
+def subtract_events(left_events, right_events):
+    """ Return left_events not found in right_events """
+    return [e for e in left_events
+            if not any(map(partial(events_are_same, e), right_events))]
 
 def combine_like_events(events):
     r = events
@@ -39,27 +44,19 @@ def combine_like_events(events):
             i = i + 1
     return r
 
-def subtract_events(left_events, right_events):
-    """ Return left_events not found in right_events """
-    events = []
-    for e in left_events:
-        if not any(map(partial(events_are_same, e), right_events)):
-            events.append(e)
-    return events
-
 class Facility:
     def __init__(self, start, end):
         self.start = start
         self.end = end
-        self._events = self._events()
+        self.json_events = self._json_events()
 
     def csv(f, event_filter):
-        return "\n".join(map(f.to_csv, filter(f.filters[event_filter], f._events)))
+        return "\n".join(map(f.to_csv, filter(f.filters[event_filter], f.json_events)))
 
     def gcal(f, event_filter):
         start = parse_date(f.start)
         end = parse_date(f.end)
-        return filter(partial(date_filter, start, end), map(f.to_gcal, filter(f.filters[event_filter], f._events)))
+        return filter(partial(date_filter, start, end), map(f.to_gcal, filter(f.filters[event_filter], f.json_events)))
 
 class SnoKing(Facility):
     location = "SnoKing"
@@ -73,7 +70,7 @@ class SnoKing(Facility):
         'public': lambda e: "Public" in e['eventName']
     }
 
-    def _events(self):
+    def _json_events(self):
         return requests.get(f'https://api.bondsports.co/v3/facilities/{self.api_id}/programs-schedule?startDate={self.start}&endDate={self.end}').json()['data']
 
     def _truncate_name(self, e):
@@ -127,7 +124,7 @@ class WISA(Facility):
         'drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title']
     }
 
-    def _events(self):
+    def _json_events(self):
         # multiview=1 returns events for both rinks, but Lynnwood event
         # objects don't indicate their location.
         return requests.get(f'https://www.rectimes.app/ova/booking/getbooking?rink={self.api_id}&multiview=0&minstart=06:00:00&maxend=26:00:00&start={self.start}&end={self.end}&_=1680859722270').json()
@@ -169,7 +166,7 @@ class KCI(Facility):
         'drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title']
     }
 
-    def _events(self):
+    def _json_events(self):
         return requests.get(f'https://www.krakencommunityiceplex.com/Umbraco/api/DaySmartCalendarApi/GetEventsAsync?start={self.start}&end={self.end}&variant=2').json()
 
     def _truncate_name(self, name):
