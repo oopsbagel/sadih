@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import itertools
+from dateutil.parser import parse as dateutil_parse
 from functools import partial
 from os import environ
 from gcsa.google_calendar import GoogleCalendar
@@ -8,11 +9,11 @@ from gcsa.event import Event
 
 from rinks import *
 
-START = '2023-04-24'
-END = '2023-04-27'
+START = '2023-04-28'
+END = '2023-05-07'
 
-start = parse_date(START)
-end = parse_date(END)
+start = dateutil_parse(START).replace(tzinfo=TIMEZONE)
+end = dateutil_parse(END).replace(tzinfo=TIMEZONE)
 
 sadih = GoogleCalendar(environ['SADIH_ID'])
 

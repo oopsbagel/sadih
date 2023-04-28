@@ -10,9 +10,7 @@ from itertools import chain
 
 CSV_HEADER = "Subject, Start date, Start time, End time, Location"
 TIMEZONE = ZoneInfo("America/Los_Angeles")
-
-def parse_date(date):
-    return dateutil_parse(date).replace(tzinfo=TIMEZONE)
+UTC = ZoneInfo("UTC")
 
 def date_filter(start, end, event):
     # Some rink APIs do not strictly respect request start/end dates.
@@ -44,19 +42,23 @@ def combine_like_events(events):
             i = i + 1
     return r
 
+
 class Facility:
     def __init__(self, start, end):
         self.start = start
         self.end = end
-        self.json_events = self._json_events()
+        self.api_events = self._events()
+
+    def _parse_date(self, date):
+        return dateutil_parse(date).replace(tzinfo=TIMEZONE)
 
     def csv(f, event_filter):
-        return "\n".join(map(f.to_csv, filter(f.filters[event_filter], f.json_events)))
+        return "\n".join(map(f.to_csv, filter(f.filters[event_filter], f.api_events)))
 
     def gcal(f, event_filter):
-        start = parse_date(f.start)
-        end = parse_date(f.end)
-        return filter(partial(date_filter, start, end), map(f.to_gcal, filter(f.filters[event_filter], f.json_events)))
+        start = f._parse_date(f.start)
+        end = f._parse_date(f.end)
+        return filter(partial(date_filter, start, end), map(f.to_gcal, filter(f.filters[event_filter], f.api_events)))
 
 class SnoKing(Facility):
     location = "SnoKing"
@@ -70,7 +72,7 @@ class SnoKing(Facility):
         'public': lambda e: "Public" in e['eventName']
     }
 
-    def _json_events(self):
+    def _events(self):
         return requests.get(f'https://api.bondsports.co/v3/facilities/{self.api_id}/programs-schedule?startDate={self.start}&endDate={self.end}').json()['data']
 
     def _truncate_name(self, e):
@@ -100,8 +102,8 @@ class SnoKing(Facility):
         if len(e['spaces']) > 0:
             sheet = e['spaces'][0]['spaceName']
             location = self.location + ' '  + sheet
-        start = parse_date(e['eventStartDate'] + ' ' + e['eventStartTime'])
-        end = parse_date(e['eventStartDate'] + ' ' + e['eventEndTime'])
+        start = self._parse_date(e['eventStartDate'] + ' ' + e['eventStartTime'])
+        end = self._parse_date(e['eventStartDate'] + ' ' + e['eventEndTime'])
         print(f'Creating Event({name}, {start}, {end}, {location})')
         return Event(name, start=start, end=end, location=location)
 
@@ -124,7 +126,7 @@ class WISA(Facility):
         'drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title']
     }
 
-    def _json_events(self):
+    def _events(self):
         # multiview=1 returns events for both rinks, but Lynnwood event
         # objects don't indicate their location.
         return requests.get(f'https://www.rectimes.app/ova/booking/getbooking?rink={self.api_id}&multiview=0&minstart=06:00:00&maxend=26:00:00&start={self.start}&end={self.end}&_=1680859722270').json()
@@ -141,8 +143,8 @@ class WISA(Facility):
         name = e['title']
         if not name.upper().startswith(self.rink.upper()):
             name = self.rink + ' ' + name
-        start = parse_date(e['start'])
-        end = parse_date(e['end'])
+        start = self._parse_date(e['start'])
+        end = self._parse_date(e['end'])
         print(f'Creating Event({name}, {start}, {end}, {self.location})')
         return Event(name, start=start, end=end, location=self.location)
 
@@ -166,7 +168,10 @@ class KCI(Facility):
         'drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title']
     }
 
-    def _json_events(self):
+    def _parse_date(self, date):
+        return dateutil_parse(date).replace(tzinfo=UTC)
+
+    def _events(self):
         return requests.get(f'https://www.krakencommunityiceplex.com/Umbraco/api/DaySmartCalendarApi/GetEventsAsync?start={self.start}&end={self.end}&variant=2').json()
 
     def _truncate_name(self, name):
@@ -187,7 +192,7 @@ class KCI(Facility):
         name = self._truncate_name(e['title'])
         if not name.upper().startswith(self.rink.upper()):
             name = self.rink + ' ' + name
-        start = parse_date(e['start'])
-        end = parse_date(e['end'])
+        start = self._parse_date(e['start'])
+        end = self._parse_date(e['end'])
         print(f'Creating Event({name}, {start}, {end}, {self.location})')
         return Event(name, start=start, end=end, location=self.location)
