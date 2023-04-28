@@ -12,8 +12,8 @@ from rinks import *
 START = '2023-04-28'
 END = '2023-05-07'
 
-start = dateutil_parse(START).replace(tzinfo=TIMEZONE)
-end = dateutil_parse(END).replace(tzinfo=TIMEZONE)
+start = dateutil_parse(START).replace(tzinfo=PACIFIC)
+end = dateutil_parse(END).replace(tzinfo=PACIFIC)
 
 sadih = GoogleCalendar(environ['SADIH_ID'])
 

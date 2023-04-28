@@ -9,7 +9,7 @@ from gcsa.event import Event
 from itertools import chain
 
 CSV_HEADER = "Subject, Start date, Start time, End time, Location"
-TIMEZONE = ZoneInfo("America/Los_Angeles")
+PACIFIC = ZoneInfo("America/Los_Angeles")
 UTC = ZoneInfo("UTC")
 
 def date_filter(start, end, event):
@@ -50,7 +50,7 @@ class Facility:
         self.api_events = self._events()
 
     def _parse_date(self, date):
-        return dateutil_parse(date).replace(tzinfo=TIMEZONE)
+        return dateutil_parse(date).replace(tzinfo=PACIFIC)
 
     def csv(f, event_filter):
         return "\n".join(map(f.to_csv, filter(f.filters[event_filter], f.api_events)))
