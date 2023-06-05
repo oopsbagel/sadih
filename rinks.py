@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 from dateutil.parser import parse as dateutil_parse
 from functools import partial
 from gcsa.event import Event
+from gcsa.google_calendar import GoogleCalendar
 from itertools import chain
 
 CSV_HEADER = "Subject, Start date, Start time, End time, Location"
@@ -59,6 +60,35 @@ class Facility:
         start = f._parse_date(f.start)
         end = f._parse_date(f.end)
         return filter(partial(date_filter, start, end), map(f.to_gcal, filter(f.filters[event_filter], f.api_events)))
+
+
+class Everett(Facility):
+    rink = "Everett"
+    location = "Angel of the Winds Community Rink"
+    snp_id = "sk8sm8vjh0nqap97cuhshajscc@group.calendar.google.com"
+
+    # Events are organised into subcalendars by the rink, so filters
+    # as I have otherwise implemented them are useless.
+    filters = {
+        'drop_in': lambda e: True,
+        'any': lambda e: True,
+        'stick_n_puck': lambda e: True,
+    }
+
+    def _events(self):
+        start = self._parse_date(self.start)
+        end = self._parse_date(self.end)
+        everett = GoogleCalendar(self.snp_id)
+        events = list(everett.get_events(start, end))
+        for recurring_event in filter(lambda e: e.recurrence, everett):
+            events += list(filter(partial(date_filter, start, end), everett.get_instances(recurring_event)))
+        return filter(lambda e: e.summary is not None, events)
+
+    def to_gcal(self, e):
+        name = self.rink + " " + e.summary
+        print(f'Creating Event({name}, {e.start}, {e.end}, {self.location})')
+        return Event(name, start=e.start, end=e.end, location=self.location, description=e.description)
+
 
 class SnoKing(Facility):
     location = "SnoKing"
@@ -120,6 +150,7 @@ class Snoqualmie(SnoKing):
     api_id = 256
     rink = "Snoqualmie"
 
+
 class WISA(Facility):
     filters = {
         'stick_n_puck': lambda e: "Stick" in e['title'],
@@ -157,6 +188,7 @@ class Lynnwood(WISA):
     api_id = 1146
     rink = "Lynnwood"
     location = "Lynnwood Ice Center"
+
 
 class KCI(Facility):
     rink = "KCI"
