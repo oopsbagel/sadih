@@ -9,7 +9,7 @@ from gcsa.google_calendar import GoogleCalendar
 
 from rinks import *
 
-START = '2023-06-06'
+START = '2023-06-07'
 END = '2023-07-31'
 
 start_dt = dateutil_parse(START).replace(tzinfo=PACIFIC)
@@ -17,7 +17,7 @@ end_dt = dateutil_parse(END).replace(tzinfo=PACIFIC)
 
 sadih = GoogleCalendar(environ['SADIH_ID'])
 
-rinks = [Everett, Kirkland, Renton, Snoqualmie, OVA, Lynnwood, KCI]
+rinks = [Everett, Kirkland, Renton, Snoqualmie, OVA, Lynnwood, KCI, Kent]
 
 existing_locations = defaultdict(list)
 for e in sadih.get_events(start_dt, end_dt):
@@ -39,7 +39,3 @@ for rink in rinks:
     for e in subtract_events(response_events, existing_events):
         print('[+] adding', e)
         sadih.add_event(e)
-
-print("the calendar now")
-for e in sadih:
-    print(e)

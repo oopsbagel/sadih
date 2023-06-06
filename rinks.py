@@ -62,7 +62,23 @@ class Facility:
         return filter(partial(date_filter, start, end), map(f.to_gcal, filter(f.filters[event_filter], f.api_events)))
 
 
-class Everett(Facility):
+class Google(Facility):
+    def _events(self):
+        start = self._parse_date(self.start)
+        end = self._parse_date(self.end)
+        calendar = GoogleCalendar(self.snp_id)
+        events = list(calendar.get_events(start, end))
+        for recurring_event in filter(lambda e: e.recurrence, calendar):
+            events += list(filter(partial(date_filter, start, end), calendar.get_instances(recurring_event)))
+        return filter(lambda e: e.summary is not None, events)
+
+    def to_gcal(self, e):
+        name = self.rink + " " + e.summary
+        print(f'Creating Event({name}, {e.start}, {e.end}, {self.location})')
+        return Event(name, start=e.start, end=e.end, location=self.location, description=e.description)
+
+
+class Everett(Google):
     rink = "Everett"
     location = "Angel of the Winds Community Rink"
     snp_id = "sk8sm8vjh0nqap97cuhshajscc@group.calendar.google.com"
@@ -75,19 +91,17 @@ class Everett(Facility):
         'stick_n_puck': lambda e: True,
     }
 
-    def _events(self):
-        start = self._parse_date(self.start)
-        end = self._parse_date(self.end)
-        everett = GoogleCalendar(self.snp_id)
-        events = list(everett.get_events(start, end))
-        for recurring_event in filter(lambda e: e.recurrence, everett):
-            events += list(filter(partial(date_filter, start, end), everett.get_instances(recurring_event)))
-        return filter(lambda e: e.summary is not None, events)
 
-    def to_gcal(self, e):
-        name = self.rink + " " + e.summary
-        print(f'Creating Event({name}, {e.start}, {e.end}, {self.location})')
-        return Event(name, start=e.start, end=e.end, location=self.location, description=e.description)
+class Kent(Google):
+    rink = "Kent"
+    location = "Kent Valley Ice Centre"
+    snp_id = "kentvalleyicecentre.com@gmail.com"
+
+    filters = {
+        'drop_in': lambda e: "Stick" in e.summary,
+        'any': lambda e: True,
+        'stick_n_puck': lambda e: "Stick" in e.summary,
+    }
 
 
 class SnoKing(Facility):
