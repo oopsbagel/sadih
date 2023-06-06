@@ -5,17 +5,17 @@ from dateutil.parser import parse as parse_date
 from rinks import *
 
 class FakeKirkland(Kirkland):
-    def _json_events(self):
+    def _events(self):
         with open('fixture_kirkland.json') as f:
             return json.load(f)['data']
 
 class FakeSnoqualmie(Snoqualmie):
-    def _json_events(self):
+    def _events(self):
         with open('fixture_snoqualmie.json') as f:
             return json.load(f)['data']
 
 class FakeRenton(Renton):
-    def _json_events(self):
+    def _events(self):
         with open('fixture_renton.json') as f:
             return json.load(f)['data']
 
