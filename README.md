@@ -15,3 +15,7 @@ Supports the following rinks:
 - [SnoKing Snoqualmie](https://bondsports.co/org/209/256/schedule)
 
 Please report any problems here.
+
+## A note
+
+Yes, this is brittle. It relies on implementation details of upstream calendars, and it breaks [djb's 5th design principal, "don't parse"](http://cr.yp.to/qmail/guarantee.html). Nevertheless, I think it is useful.
