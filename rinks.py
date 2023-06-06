@@ -53,9 +53,6 @@ class Facility:
     def _parse_date(self, date):
         return dateutil_parse(date).replace(tzinfo=PACIFIC)
 
-    def csv(f, event_filter):
-        return "\n".join(map(f.to_csv, filter(f.filters[event_filter], f.api_events)))
-
     def gcal(f, event_filter):
         start = f._parse_date(f.start)
         end = f._parse_date(f.end)
@@ -125,19 +122,6 @@ class SnoKing(Facility):
         except ValueError:
             return e['eventName']
 
-    # def event_to_csv
-    # def csv_event
-    # def event_csv
-    def to_csv(self, e):
-        name = self._truncate_name(e)
-        if not name.upper().startswith(self.rink.upper()):
-            name = self.rink + ' ' + name
-        location = self.location
-        if len(e['spaces']) > 0:
-            sheet = e['spaces'][0]['spaceName']
-            location = self.location + ' '  + sheet
-        return ", ".join([name, e['eventStartDate'], e['eventStartTime'], e['eventEndTime'], location])
-
     def to_gcal(self, e):
         name = self._truncate_name(e)
         if not name.upper().startswith(self.rink.upper()):
@@ -175,14 +159,6 @@ class WISA(Facility):
         # multiview=1 returns events for both rinks, but Lynnwood event
         # objects don't indicate their location.
         return requests.get(f'https://www.rectimes.app/ova/booking/getbooking?rink={self.api_id}&multiview=0&minstart=06:00:00&maxend=26:00:00&start={self.start}&end={self.end}&_=1680859722270').json()
-
-    def to_csv(self, e):
-        name = e['title']
-        if not name.upper().startswith(self.rink.upper()):
-            name = self.rink + ' ' + name
-        date, start = e['start'].split(' ')
-        _, end = e['end'].split(' ')
-        return ", ".join([name, date, start, end, self.location])
 
     def to_gcal(self, e):
         name = e['title']
@@ -227,12 +203,6 @@ class KCI(Facility):
             return name[:name.upper().index('DROP-IN')+7].upper()
         except ValueError:
             return name
-
-    def to_csv(self, e):
-        name = self.rink + ' ' + e['title']
-        date, start = e['start'].split('T')
-        _, end = e['end'].split('T')
-        return ", ".join([name, date, start[:-1], end[:-1], self.location])
 
     def to_gcal(self, e):
         name = self._truncate_name(e['title'])
