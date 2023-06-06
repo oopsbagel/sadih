@@ -152,7 +152,7 @@ class Snoqualmie(SnoKing):
 class WISA(Facility):
     filters = {
         'stick_n_puck': lambda e: "Stick" in e['title'],
-        'drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title']
+        'drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title'] or "Lunch" in e['title']
     }
 
     def _events(self):
