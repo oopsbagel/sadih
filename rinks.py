@@ -33,7 +33,7 @@ def subtract_events(left_events, right_events):
             if not any(map(partial(events_are_same, e), right_events))]
 
 def combine_like_events(events):
-    r = events
+    r = list(events)
     i = 0
     while i+1 < len(r):
         if events_are_abutting(r[i], r[i+1]) or events_are_same(r[i], r[i+1]):
