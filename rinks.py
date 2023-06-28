@@ -54,19 +54,15 @@ class Facility:
         return dateutil_parse(date).replace(tzinfo=PACIFIC)
 
     def gcal(f, event_filter):
-        start = f._parse_date(f.start)
-        end = f._parse_date(f.end)
-        return filter(partial(date_filter, start, end), map(f.to_gcal, filter(f.filters[event_filter], f.api_events)))
+        return filter(partial(date_filter, f.start, f.end), map(f.to_gcal, filter(f.filters[event_filter], f.api_events)))
 
 
 class Google(Facility):
     def _events(self):
-        start = self._parse_date(self.start)
-        end = self._parse_date(self.end)
         calendar = GoogleCalendar(self.snp_id)
-        events = list(calendar.get_events(start, end))
+        events = list(calendar.get_events(self.start, self.end))
         for recurring_event in filter(lambda e: e.recurrence, calendar):
-            events += list(filter(partial(date_filter, start, end), calendar.get_instances(recurring_event)))
+            events += list(filter(partial(date_filter, self.start, self.end), calendar.get_instances(recurring_event)))
         return filter(lambda e: e.summary is not None, events)
 
     def to_gcal(self, e):
@@ -114,7 +110,9 @@ class SnoKing(Facility):
     }
 
     def _events(self):
-        return requests.get(f'https://api.bondsports.co/v3/facilities/{self.api_id}/programs-schedule?startDate={self.start}&endDate={self.end}').json()['data']
+        start = self.start.strftime('%Y-%m-%d')
+        end = self.end.strftime('%Y-%m-%d')
+        return requests.get(f'https://api.bondsports.co/v3/facilities/{self.api_id}/programs-schedule?startDate={start}&endDate={end}').json()['data']
 
     def _truncate_name(self, e):
         try:
@@ -156,9 +154,11 @@ class WISA(Facility):
     }
 
     def _events(self):
+        start = self.start.strftime('%Y-%m-%d')
+        end = self.end.strftime('%Y-%m-%d')
         # multiview=1 returns events for both rinks, but Lynnwood event
         # objects don't indicate their location.
-        return requests.get(f'https://www.rectimes.app/ova/booking/getbooking?rink={self.api_id}&multiview=0&minstart=06:00:00&maxend=26:00:00&start={self.start}&end={self.end}&_=1680859722270').json()
+        return requests.get(f'https://www.rectimes.app/ova/booking/getbooking?rink={self.api_id}&multiview=0&minstart=06:00:00&maxend=26:00:00&start={start}&end={end}&_=1680859722270').json()
 
     def to_gcal(self, e):
         name = e['title']
@@ -194,7 +194,9 @@ class KCI(Facility):
         return dateutil_parse(date).replace(tzinfo=UTC)
 
     def _events(self):
-        return requests.get(f'https://www.krakencommunityiceplex.com/Umbraco/api/DaySmartCalendarApi/GetEventsAsync?start={self.start}&end={self.end}&variant=2').json()
+        start = self.start.strftime('%Y-%m-%d')
+        end = self.end.strftime('%Y-%m-%d')
+        return requests.get(f'https://www.krakencommunityiceplex.com/Umbraco/api/DaySmartCalendarApi/GetEventsAsync?start={start}&end={end}&variant=2').json()
 
     def _truncate_name(self, name):
         # Handle "Drop-in GOALIE" and "Drop-In SKATER" describing two links
