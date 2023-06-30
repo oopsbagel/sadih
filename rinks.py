@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import json
 import requests
 from zoneinfo import ZoneInfo
@@ -43,6 +41,12 @@ def combine_like_events(events):
             i = i + 1
     return r
 
+def lookup_rink(rink_name):
+    for rink in all_rinks:
+        if rink_name == rink.rink:
+            return rink
+    raise RuntimeError(f"rink {rink_name} not found")
+
 
 class Facility:
     def __init__(self, start, end):
@@ -79,6 +83,7 @@ class Everett(Google):
     # Events are organised into subcalendars by the rink, so filters
     # as I have otherwise implemented them are useless.
     filters = {
+        'all_drop_in': lambda e: True,
         'drop_in': lambda e: True,
         'any': lambda e: True,
         'stick_n_puck': lambda e: True,
@@ -91,6 +96,7 @@ class Kent(Google):
     snp_id = "kentvalleyicecentre.com@gmail.com"
 
     filters = {
+        'all_drop_in': lambda e: "Stick" in e.summary,
         'drop_in': lambda e: "Stick" in e.summary,
         'any': lambda e: True,
         'stick_n_puck': lambda e: "Stick" in e.summary,
@@ -103,8 +109,10 @@ class SnoKing(Facility):
     filters = {
         'any': lambda e: True,
         'stick_n_puck': lambda e: "Stick" in e['eventName'],
-        'drop_in': lambda e: ("Drop" in e['eventName'] \
+        'all_drop_in': lambda e: ("Drop" in e['eventName'] \
                              or "Stick" in e['eventName']) \
+                             and not "Invite" in e['eventName'],
+        'drop_in': lambda e: "Drop" in e['eventName'] \
                              and not "Invite" in e['eventName'],
         'public': lambda e: "Public" in e['eventName']
     }
@@ -150,7 +158,8 @@ class Snoqualmie(SnoKing):
 class WISA(Facility):
     filters = {
         'stick_n_puck': lambda e: "Stick" in e['title'],
-        'drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title'] or "Lunch" in e['title']
+        'drop_in': lambda e: "Drop" in e['title'] or "Lunch" in e['title'],
+        'all_drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title'] or "Lunch" in e['title']
     }
 
     def _events(self):
@@ -187,7 +196,8 @@ class KCI(Facility):
     filters = {
         'hockey': lambda e: e['sportId'] == 20,
         'stick_n_puck': lambda e: "Stick" in e['title'],
-        'drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title']
+        'drop_in': lambda e: "Drop" in e['title'],
+        'all_drop_in': lambda e: "Stick" in e['title'] or "Drop" in e['title']
     }
 
     def _parse_date(self, date):
@@ -214,3 +224,5 @@ class KCI(Facility):
         end = self._parse_date(e['end'])
         print(f'Creating Event({name}, {start}, {end}, {self.location})')
         return Event(name, start=start, end=end, location=self.location)
+
+all_rinks = [Everett, Kirkland, Renton, Snoqualmie, OVA, Lynnwood, KCI, Kent]

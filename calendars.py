@@ -1,23 +1,14 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict
-from dateutil.parser import parse as dateutil_parse
-from functools import partial
-from os import environ
-from gcsa.event import Event
+from datetime import datetime, timedelta
 from gcsa.google_calendar import GoogleCalendar
+from yaml import safe_load
 
 from rinks import *
 
-START = '2023-06-28'
-END = '2023-08-01'
-start = dateutil_parse(START).replace(tzinfo=PACIFIC)
-end = dateutil_parse(END).replace(tzinfo=PACIFIC)
-
-rinks = [Everett, Kirkland, Renton, Snoqualmie, OVA, Lynnwood, KCI, Kent]
-
-def calendar(gcal_id, rinks, event_filter_name, start, end):
-    sadih = GoogleCalendar(environ['SADIH_ID'])
+def update_calendar(gcal_id, rinks, event_filter_name, start, end):
+    sadih = GoogleCalendar(gcal_id)
 
     existing_events_by_rink = defaultdict(list)
     for e in sadih.get_events(start, end):
@@ -52,4 +43,22 @@ def calendar(gcal_id, rinks, event_filter_name, start, end):
         print('[+] adding', e)
         sadih.add_event(e)
 
-calendar(environ['SADIH_ID'], rinks, 'drop_in', start, end)
+def sync_calendars(config_path):
+    with open(config_path) as file:
+        conf = safe_load(file)
+
+    tomorrow = datetime.now(tz=PACIFIC) + timedelta(days=1)
+    four_weeks = tomorrow + timedelta(weeks=4)
+
+    for cal_name in conf['calendars']:
+        cal = conf['calendars'][cal_name]
+        cal_rinks = map(lookup_rink, cal['rinks'])
+        print(cal['id'], cal_rinks, cal['filter'], tomorrow, four_weeks)
+        update_calendar(cal['id'], cal_rinks, cal['filter'], tomorrow, four_weeks)
+
+if __name__ == '__main__':
+    import sys
+    config_path = 'config.yaml'
+    if len(sys.argv) == 2:
+        config_path = sys.argv[1]
+    sync_calendars(config_path)
