@@ -43,22 +43,19 @@ def update_calendar(gcal_id, rinks, event_filter_name, start, end):
         print('[+] adding', e)
         sadih.add_event(e)
 
-def sync_calendars(config_path):
-    with open(config_path) as file:
-        conf = safe_load(file)
-
+def sync_calendars(config):
     tomorrow = datetime.now(tz=PACIFIC) + timedelta(days=1)
     four_weeks = tomorrow + timedelta(weeks=4)
-
-    for cal_name in conf['calendars']:
-        cal = conf['calendars'][cal_name]
-        cal_rinks = map(lookup_rink, cal['rinks'])
-        print(cal['id'], cal_rinks, cal['filter'], tomorrow, four_weeks)
-        update_calendar(cal['id'], cal_rinks, cal['filter'], tomorrow, four_weeks)
+    for cal in config['calendars'].values():
+        rinks = map(lookup_rink, cal['rinks'])
+        print(cal['id'], rinks, cal['filter'], tomorrow, four_weeks)
+        update_calendar(cal['id'], rinks, cal['filter'], tomorrow, four_weeks)
 
 if __name__ == '__main__':
     import sys
     config_path = 'config.yaml'
     if len(sys.argv) == 2:
         config_path = sys.argv[1]
-    sync_calendars(config_path)
+    with open(config_path) as file:
+        config = safe_load(file)
+    sync_calendars(config)
