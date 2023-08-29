@@ -4,6 +4,9 @@ from dateutil.parser import parse as parse_date
 
 from rinks import *
 
+START = parse_date('2023-04-20').replace(tzinfo=PACIFIC)
+END = parse_date('2023-04-21').replace(tzinfo=PACIFIC)
+
 class FakeKirkland(Kirkland):
     def _events(self):
         with open('fixture_kirkland.json') as f:
@@ -20,7 +23,7 @@ class FakeRenton(Renton):
             return json.load(f)['data']
 
 def test_event():
-    events = FakeKirkland('2023-04-20', '2023-04-21').gcal('stick_n_puck')
+    events = FakeKirkland(START, END).gcal('stick_n_puck')
     events = list(events)
     assert len(events) == 1
     expected_event = Event(
@@ -35,26 +38,26 @@ def test_event():
     assert events_are_same(events[0], expected_event)
 
 def test_any_filter():
-    events = FakeKirkland('2023-04-20', '2023-04-21').gcal('any')
+    events = FakeKirkland(START, END).gcal('any')
     events = list(events)
     assert len(events) == 18
 
 def test_combine_like_events():
-    events = FakeRenton('2023-04-20', '2023-04-21').gcal('stick_n_puck')
+    events = FakeRenton(START, END).gcal('stick_n_puck')
     events = list(events)
     assert len(events) == 6
     events = combine_like_events(events)
     assert len(events) == 3
 
 def test_new_events():
-    events = FakeKirkland('2023-04-20', '2023-04-21').gcal('any')
+    events = FakeKirkland(START, END).gcal('any')
     events = list(events)
     excluded_event = events[0]
     existing_events = events[1:]
     assert [excluded_event] == subtract_events(events, existing_events)
 
 def test_delete_events():
-    events = FakeKirkland('2023-04-20', '2023-04-21').gcal('any')
+    events = FakeKirkland(START, END).gcal('any')
     events = list(events)
     excluded_event = events[0]
     existing_events = events
