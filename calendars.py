@@ -7,6 +7,15 @@ from yaml import safe_load
 
 from rinks import *
 
+all_rinks = [Everett, Kirkland, Renton, Snoqualmie, OVA, Lynnwood, KCI, Kent]
+
+def lookup_rink(rink_name):
+    """ Return Rink object with matching name """
+    for rink in all_rinks:
+        if rink_name == rink.rink:
+            return rink
+    raise RuntimeError(f"rink {rink_name} not found")
+
 def update_calendar(gcal_id, rinks, event_filter_name, start, end):
     sadih = GoogleCalendar(gcal_id)
 

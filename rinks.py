@@ -41,14 +41,7 @@ def combine_like_events(events):
             i = i + 1
     return r
 
-def lookup_rink(rink_name):
-    for rink in all_rinks:
-        if rink_name == rink.rink:
-            return rink
-    raise RuntimeError(f"rink {rink_name} not found")
-
-
-class Facility:
+class Rink:
     def __init__(self, start, end):
         self.start = start
         self.end = end
@@ -61,7 +54,7 @@ class Facility:
         return filter(partial(date_filter, f.start, f.end), map(f.to_gcal, filter(f.filters[event_filter], f.api_events)))
 
 
-class Google(Facility):
+class Google(Rink):
     def _events(self):
         calendar = GoogleCalendar(self.snp_id)
         events = list(calendar.get_events(self.start, self.end))
@@ -103,7 +96,7 @@ class Kent(Google):
     }
 
 
-class SnoKing(Facility):
+class SnoKing(Rink):
     location = "SnoKing"
 
     filters = {
@@ -155,7 +148,7 @@ class Snoqualmie(SnoKing):
     rink = "Snoqualmie"
 
 
-class WISA(Facility):
+class WISA(Rink):
     filters = {
         'stick_n_puck': lambda e: "Stick" in e['title'],
         'drop_in': lambda e: "Drop" in e['title'] or "Lunch" in e['title'],
@@ -189,7 +182,7 @@ class Lynnwood(WISA):
     location = "Lynnwood Ice Center"
 
 
-class KCI(Facility):
+class KCI(Rink):
     rink = "KCI"
     location = "Kraken Community Iceplex"
 
@@ -224,5 +217,3 @@ class KCI(Facility):
         end = self._parse_date(e['end'])
         print(f'Creating Event({name}, {start}, {end}, {self.location})')
         return Event(name, start=start, end=end, location=self.location)
-
-all_rinks = [Everett, Kirkland, Renton, Snoqualmie, OVA, Lynnwood, KCI, Kent]
