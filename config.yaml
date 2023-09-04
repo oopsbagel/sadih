@@ -1,0 +1,10 @@
+all_rinks: &all_rinks [Kirkland, Snoqualmie, Renton, OVA, KCI, Lynnwood, Kent]
+calendars:
+  calendar_name:
+    id: gcal_id@group.calendar.google.com
+    rinks: [Kirkland, Snoqualmie, Renton]
+    filter: drop_in
+  other_calendar:
+    id: other@gmail.com
+    rinks: *all_rinks
+    filter: stick_n_puck
