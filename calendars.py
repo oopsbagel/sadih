@@ -52,19 +52,37 @@ def update_calendar(gcal_id, rinks, event_filter_name, start, end):
         print('[+] adding', e)
         sadih.add_event(e)
 
-def sync_calendars(config):
+def sync_calendars(calendars, until):
     tomorrow = datetime.now(tz=PACIFIC) + timedelta(days=1)
-    four_weeks = tomorrow + timedelta(weeks=4)
+    end_date = tomorrow + until
+    for cal in calendars:
+        update_calendar(*cal, tomorrow, end_date)
+
+def load_config(config_path):
+    with open(config_path) as file:
+        config = safe_load(file)
+    calendars = []
     for cal in config['calendars'].values():
-        rinks = map(lookup_rink, cal['rinks'])
-        print(cal['id'], rinks, cal['filter'], tomorrow, four_weeks)
-        update_calendar(cal['id'], rinks, cal['filter'], tomorrow, four_weeks)
+        rinks = list(map(lookup_rink, cal['rinks']))
+        print(cal['id'], rinks, cal['filter'])
+        calendars.append([cal['id'], rinks, cal['filter']])
+    return calendars
+
+CONFIG_TEMPLATE = """
+calendars:
+  calendar_name:
+    id: gcal_id@group.calendar.google.com
+    rinks: [Kirkland, Snoqualmie, Renton]
+    filter: drop_in"""
 
 if __name__ == '__main__':
     import sys
     config_path = 'config.yaml'
     if len(sys.argv) == 2:
         config_path = sys.argv[1]
-    with open(config_path) as file:
-        config = safe_load(file)
-    sync_calendars(config)
+    try:
+        calendars = load_config(config_path)
+    except (KeyError, TypeError):
+        raise ValueError(f"config must follow format:\n{CONFIG_TEMPLATE}")
+    until = timedelta(weeks=4)
+    sync_calendars(calendars, until)
