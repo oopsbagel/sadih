@@ -65,7 +65,10 @@ class Google(Rink):
     def to_gcal(self, e):
         name = self.rink + " " + e.summary
         print(f'Creating Event({name}, {e.start}, {e.end}, {self.location})')
-        return Event(name, start=e.start, end=e.end, location=self.location, description=e.description)
+        description = self.upstream
+        if e.description is not None:
+            description = description + "\n" + e.description
+        return Event(name, start=e.start, end=e.end, location=self.location, description=description)
 
 
 class Everett(Google):
@@ -134,7 +137,7 @@ class SnoKing(Rink):
         start = self._parse_date(e['eventStartDate'] + ' ' + e['eventStartTime'])
         end = self._parse_date(e['eventStartDate'] + ' ' + e['eventEndTime'])
         print(f'Creating Event({name}, {start}, {end}, {location})')
-        return Event(name, start=start, end=end, location=location)
+        return Event(name, start=start, end=end, location=location, description=self.upstream)
 
 
 class Kirkland(SnoKing):
@@ -174,7 +177,7 @@ class WISA(Rink):
         start = self._parse_date(e['start'])
         end = self._parse_date(e['end'])
         print(f'Creating Event({name}, {start}, {end}, {self.location})')
-        return Event(name, start=start, end=end, location=self.location)
+        return Event(name, start=start, end=end, location=self.location, description=self.upstream)
 
 class OVA(WISA):
     api_id = 1145
@@ -224,4 +227,4 @@ class KCI(Rink):
         start = self._parse_date(e['start'])
         end = self._parse_date(e['end'])
         print(f'Creating Event({name}, {start}, {end}, {self.location})')
-        return Event(name, start=start, end=end, location=self.location)
+        return Event(name, start=start, end=end, location=self.location, description=self.upstream)
