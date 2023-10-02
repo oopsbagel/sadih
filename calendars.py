@@ -75,14 +75,17 @@ calendars:
     rinks: [Kirkland, Snoqualmie, Renton]
     filter: drop_in"""
 
+def main(config_path, until):
+    try:
+        calendars = load_config(config_path)
+    except (KeyError, TypeError):
+        raise ValueError(f"config must follow format:\n{CONFIG_TEMPLATE}")
+    sync_calendars(calendars, until)
+
 if __name__ == '__main__':
     import sys
     config_path = 'config.yaml'
     if len(sys.argv) == 2:
         config_path = sys.argv[1]
-    try:
-        calendars = load_config(config_path)
-    except (KeyError, TypeError):
-        raise ValueError(f"config must follow format:\n{CONFIG_TEMPLATE}")
     until = timedelta(weeks=4)
-    sync_calendars(calendars, until)
+    main(config_path, until)
