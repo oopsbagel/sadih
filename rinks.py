@@ -78,9 +78,9 @@ class Everett(Google):
     # as I have otherwise implemented them are useless.
     filters = {
         'all_drop_in': lambda e: True,
-        'drop_in': lambda e: True,
+        'drop_in': lambda e: "Stick" not in e.summary,
         'any': lambda e: True,
-        'stick_n_puck': lambda e: True,
+        'stick_n_puck': lambda e: "Stick" in e.summary,
     }
 
 
@@ -92,7 +92,7 @@ class Kent(Google):
 
     filters = {
         'all_drop_in': lambda e: "Stick" in e.summary,
-        'drop_in': lambda e: "Stick" in e.summary,
+        'drop_in': lambda e: "Stick" not in e.summary,
         'any': lambda e: True,
         'stick_n_puck': lambda e: "Stick" in e.summary,
     }
