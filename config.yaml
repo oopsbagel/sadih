@@ -1,10 +1,20 @@
-all_rinks: &all_rinks [Kirkland, Snoqualmie, Renton, OVA, KCI, Lynnwood, Kent]
+all_rinks: &all_rinks [Kirkland, Snoqualmie, Renton, OVA, KCI, Lynnwood, Kent, Everett]
+snoking: &snoking [Kirkland, Snoqualmie, Renton]
+westside: &westside [OVA, KCI, Lynnwood, Kent, Everett]
 calendars:
-  calendar_name:
-    id: gcal_id@group.calendar.google.com
-    rinks: [Kirkland, Snoqualmie, Renton]
+  dev_snoking_drop_in:
+    id: 355c1d76e2a41e095c52874b67d63986b64e6e6972ba15133f8d82fd626020bc@group.calendar.google.com
+    rinks: *snoking
     filter: drop_in
-  other_calendar:
-    id: other@gmail.com
-    rinks: *all_rinks
+  dev_snoking_stick_n_puck:
+    id: 4191a8ca58b805ab5bff7017c3d4472d57e3386e6c6c106b66d55ff977bfb3e8@group.calendar.google.com
+    rinks: *snoking
+    filter: stick_n_puck
+  dev_westside_drop_in:
+    id: 5a52e66de00d4451cdde44739178416da49d9f7537e461f45ff9a55fd5d3b08d@group.calendar.google.com
+    rinks: *westside
+    filter: drop_in
+  dev_westside_stick_n_puck:
+    id: 3cf16b7e58c936197caecb62d2c6474d2d2efe3f27bbce03a2abbc83c8387da1@group.calendar.google.com
+    rinks: *westside
     filter: stick_n_puck
