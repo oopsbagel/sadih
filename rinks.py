@@ -72,6 +72,7 @@ class Everett(Google):
     rink = "Everett"
     location = "Angel of the Winds Community Rink"
     snp_id = "sk8sm8vjh0nqap97cuhshajscc@group.calendar.google.com"
+    upstream = "https://www.angelofthewindsarena.com/ice-rink/ice-rink-calendar"
 
     # Events are organised into subcalendars by the rink, so filters
     # as I have otherwise implemented them are useless.
@@ -87,6 +88,7 @@ class Kent(Google):
     rink = "Kent"
     location = "Kent Valley Ice Centre"
     snp_id = "kentvalleyicecentre.com@gmail.com"
+    upstream = "https://kentvalleyicecentre.net/Ice-Hockey.html"
 
     filters = {
         'all_drop_in': lambda e: "Stick" in e.summary,
@@ -138,14 +140,17 @@ class SnoKing(Rink):
 class Kirkland(SnoKing):
     api_id = 225
     rink = "Kirkland"
+    upstream = "https://bondsports.co/org/209/225/schedule"
 
 class Renton(SnoKing):
     api_id = 255
     rink = "Renton"
+    upstream = "https://bondsports.co/org/209/255/schedule"
 
 class Snoqualmie(SnoKing):
     api_id = 256
     rink = "Snoqualmie"
+    upstream = "https://bondsports.co/org/209/256/schedule"
 
 
 class WISA(Rink):
@@ -175,16 +180,19 @@ class OVA(WISA):
     api_id = 1145
     rink = "OVA"
     location = "Olympic View Arena"
+    upstream = "https://www.rectimes.app/ova/cat/ova"
 
 class Lynnwood(WISA):
     api_id = 1146
     rink = "Lynnwood"
     location = "Lynnwood Ice Center"
+    upstream = "https://www.rectimes.app/ova/cat/lic"
 
 
 class KCI(Rink):
     rink = "KCI"
     location = "Kraken Community Iceplex"
+    upstream = "https://www.krakencommunityiceplex.com/public-drop-in-calendar/"
 
     filters = {
         'hockey': lambda e: e['sportId'] == 20,
