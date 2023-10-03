@@ -1,0 +1,27 @@
+rinks: &all_rinks
+  - Everett
+  - Lynnwood
+  - OVA
+  - KCI
+  - Kirkland
+  - Renton
+  - Snoqualmie
+  - Kent
+calendars:
+  sadih:
+    id: 8d680f26e97f929fc1ebae31a5e07bd4dbb8b52d96725d7d050f920fed98f671@group.calendar.google.com
+    rinks: *all_rinks
+    filter: all_drop_in
+comments:
+  drop_in:
+    id: def456
+    rinks: *all_rinks
+    filter: drop_in
+  snp:
+    id: ghi789
+    rinks: *all_rinks
+    filter: snp
+  womens:
+    id: abc444
+    rinks: *all_rinks
+    filter: womens
